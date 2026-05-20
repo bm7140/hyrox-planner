@@ -8,6 +8,7 @@ import { CLASS_PRESETS, CLASS_NAMES, LOG_TYPES } from '../config/classPresets'
 import { VERSION, STORAGE_KEY } from '../config/constants'
 import { DEFAULT_PROFILE } from '../config/defaultProfile'
 import { ROLE_META } from '../config/roleMeta'
+import { genMeals, calcMacros, calcHydration } from '../config/nutritionPresets'
 import { useCalc } from '../composables/useCalc'
 import { useStorage } from '../composables/useStorage'
 import {
@@ -544,22 +545,26 @@ export const useAppStore = defineStore('app', () => {
   }
 
   function mealAdvice(plan, energy, s) {
-    const role = plan.role
+    const role = plan.role || "rest"
     const orientation = data.profile.trainingOrientation || "fatLoss"
-    const high = ["hyrox", "complete", "conditioning"].includes(role)
-    const strength = role === "strength"
+    const bw = nval(data.profile.bodyWeight, 84)
+    const kcal = energy.planned.targetIn
+    const deficit = energy.planned.deficit
+    const duration = plan.duration || 60
+    const lthr = data.profile.lthr
+
+    const macros = calcMacros(role, bw, kcal)
+    const water = calcHydration(bw, duration)
+    const meals = genMeals(role, orientation, kcal, bw, deficit)
+
+    const isHigh = ["hyrox", "complete", "conditioning"].includes(role)
     const selfRun = role === "hyrox" || role === "conditioning"
     const z2 = role === "z2"
     const recovery = ["recovery", "rest", "no_train"].includes(role)
-    const kcal = energy.planned.targetIn
-    const lthr = data.profile.lthr
-    let breakfast = (high && !strength) || selfRun ? "训练前早餐：优先碳水+蛋白，例如燕麦/米饭/面包 + 鸡蛋/酸奶/瘦肉；少油少炸，避免太撑。" : strength ? "训练前早餐：优先碳水+蛋白，力量训练需要一定能量储备；避免空腹训练。" : z2 ? "早餐正常吃，保留适量碳水，避免空腹硬练。" : "早餐清淡均衡，蛋白质足够，碳水按饥饿感调整。"
-    let snack = high || selfRun ? "如果早餐距离训练超过2小时，可在训练前30-60分钟加香蕉/面包/能量胶之一；高强度跑步可额外补电解质。" : strength ? "如早餐较早，可训练前30-60分钟加一份小碳水，例如香蕉或面包。" : "一般不需要额外训练前加餐。"
-    let lunch = high || strength || selfRun ? "午餐是训练后恢复餐：优先补充主食 + 30-45g蛋白质 + 蔬菜，出汗多时补电解质。" : z2 ? "午餐正常补蛋白和主食，不要因为减脂完全不吃碳水。" : "午餐控制总量，蛋白质和蔬菜优先，主食适中。"
-    let dinner = high || selfRun ? "晚餐保留适量碳水，避免当天缺口过大影响恢复；总摄入围绕目标热量调整。" : strength ? "晚餐蛋白质优先，主食适中，帮助力量恢复。" : recovery ? "晚餐以蛋白质、蔬菜为主，主食适量，维持热量缺口。" : "晚餐根据当天剩余热量安排，避免高油零食。"
-    let night = s?.nightShift ? "夜班建议：准备低脂高蛋白加餐，如酸奶/牛奶/鸡胸/鸡蛋/饭团/水果；避免泡面、炸物、奶茶和下班后暴食。" : ""
-    let hr = selfRun ? `心率提醒：${getRunHRDisplay(plan.variant || { key: "lsd" })}。` : high ? `心率提醒：训练大部分控制在 ${data.profile.steadyHrLow}-${data.profile.steadyHrHigh} bpm，短时间可到 ${data.profile.thresholdHrLow}-${data.profile.thresholdHrHigh}，避免长时间超过 LTHR ${lthr}。` : z2 ? `心率提醒：Z2 控制在 ${data.profile.z2HrLow}-${data.profile.z2HrHigh} bpm。` : recovery ? `心率提醒：恢复区 ${data.profile.recoveryHrLow}-${data.profile.recoveryHrHigh} bpm。` : `心率提醒：力量训练以RPE为主，组间避免长期顶到 LTHR ${lthr} 以上。`
-    return { kcal, breakfast, snack, lunch, dinner, night, hr }
+
+    let hr = selfRun ? `心率提醒：${getRunHRDisplay(plan.variant || { key: "lsd" })}。` : isHigh ? `心率提醒：训练大部分控制在 ${data.profile.steadyHrLow}-${data.profile.steadyHrHigh} bpm，短时间可到 ${data.profile.thresholdHrLow}-${data.profile.thresholdHrHigh}，避免长时间超过 LTHR ${lthr}。` : z2 ? `心率提醒：Z2 控制在 ${data.profile.z2HrLow}-${data.profile.z2HrHigh} bpm。` : recovery ? `心率提醒：恢复区 ${data.profile.recoveryHrLow}-${data.profile.recoveryHrHigh} bpm。` : `心率提醒：力量训练以RPE为主，组间避免长期顶到 LTHR ${lthr} 以上。`
+
+    return { kcal, macros, water, meals, hr, nightShift: s?.nightShift }
   }
 
   function makePlan(d) {

@@ -147,14 +147,18 @@
         </div></div>
       </div>
       <div class="box" style="margin-top:12px">
-        <h3>三餐建议，按早饭后、午饭前训练安排</h3>
-        <p><b>目标摄入：</b>{{ logMeal.kcal }} kcal 左右</p>
-        <p><b>早餐：</b>{{ logMeal.breakfast }}</p>
-        <p><b>训练前加餐：</b>{{ logMeal.snack }}</p>
-        <p><b>午餐：</b>{{ logMeal.lunch }}</p>
-        <p><b>晚餐：</b>{{ logMeal.dinner }}</p>
-        <p v-if="logMeal.night"><b>夜班建议：</b>{{ logMeal.night }}</p>
-        <p class="muted">{{ logMeal.hr }}</p>
+        <h3>四餐规划，按早上训练安排</h3>
+        <p style="margin-bottom:6px">目标摄入：<b>{{ logMeal.kcal }} kcal</b> · 蛋白质 <b>{{ logMeal.macros.proteinG }}g</b> / 碳水 <b>{{ logMeal.macros.carbG }}g</b> / 脂肪 <b>{{ logMeal.macros.fatG }}g</b></p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <template v-for="m in ['breakfast','postWorkout','lunch','dinner']" :key="m">
+            <div v-if="logMeal.meals?.[m]" style="flex:1 1 calc(50% - 4px);min-width:200px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px">
+              <p style="font-weight:600;font-size:13px;margin-bottom:2px">{{ logMeal.meals[m].label }} <span style="font-weight:400;color:var(--muted);font-size:11px">{{ logMeal.meals[m].time }}</span></p>
+              <p style="font-size:12px;margin:2px 0">{{ logMeal.meals[m].examples[0] }}</p>
+            </div>
+          </template>
+        </div>
+        <p v-if="logMeal.nightShift && logMeal.meals?.nightShift" style="margin-top:6px;font-size:12px;background:#ede9fe;border-radius:6px;padding:6px 8px">🌙 <b>夜班加餐：</b>{{ logMeal.meals.nightShift.examples[0] }}</p>
+        <p class="muted" style="margin-top:6px;font-size:12px">{{ logMeal.hr }}</p>
       </div>
     </div>
 
@@ -237,9 +241,10 @@ const previewFatigue = computed(() => previewResult.value?.total ?? null)
 const previewDetail = computed(() => previewResult.value?.breakdown || {})
 
 const logPlan = computed(() => store.makePlan(logDate.value))
-const logPlanEnergy = computed(() => store.estimateEnergy(logDate.value, logPlan.value?.plan || {}, store.normalizeScheduleItem(store.data.schedule[logDate.value])))
-const logMeal = computed(() => store.mealAdvice(logPlan.value?.plan || {}, logPlanEnergy.value, store.normalizeScheduleItem(store.data.schedule[logDate.value])))
-const logCalPreview = computed(() => logPlan.value && logPlan.value.plan && logPlan.value.plan.name !== '休息')
+const logTargetPlan = computed(() => logPlan.value?.primaryItems?.[0]?.plan || logPlan.value?.selfPlan || {})
+const logPlanEnergy = computed(() => store.estimateEnergy(logDate.value, logTargetPlan.value, store.normalizeScheduleItem(store.data.schedule[logDate.value])))
+const logMeal = computed(() => store.mealAdvice(logTargetPlan.value, logPlanEnergy.value, store.normalizeScheduleItem(store.data.schedule[logDate.value])))
+const logCalPreview = computed(() => logTargetPlan.value && logTargetPlan.value.name !== '休息')
 
 function loadExisting() {
   const d = logDate.value

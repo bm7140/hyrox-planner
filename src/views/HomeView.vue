@@ -153,29 +153,59 @@
 <div class="card">
       <h3>🍽️ 饮食计划</h3>
       <div class="box">
-        <div class="grid">
+        <div class="grid" style="gap:16px">
           <div class="col-6">
-            <h4>计划消耗</h4>
-            <p>基础代谢：<b>{{ store.data.profile.bmr }} kcal</b></p>
-            <p>训练消耗：<b>{{ energy.planned.exercise }} kcal</b></p>
-            <p>EPOC：<b>{{ energy.planned.epoc }} kcal</b></p>
-            <p>步行消耗（{{ energy.planned.steps }}步）：<b>{{ energy.planned.stepsK }} kcal</b></p>
-            <p v-if="schedule?.work">工作生活消耗：<b>+{{ energy.planned.extra }} kcal</b></p>
-            <hr>
-            <p>计划TDEE：<span style="font-size:20px;font-weight:900;color:var(--blue)"><b>{{ energy.planned.tdee }}</b> kcal</span></p>
-            <p>目标摄入：<span style="font-size:20px;font-weight:900;color:var(--green)"><b>{{ energy.planned.targetIn }}</b> kcal</span></p>
-            <p>计划缺口：<b>{{ energy.planned.deficit }} kcal</b></p>
+            <h4>📊 消耗与目标</h4>
+            <div class="kcal-summary" style="display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap">
+              <div class="kcal-badge blue">TDEE <b>{{ energy.planned.tdee }}</b> kcal</div>
+              <div class="kcal-badge green">目标摄入 <b>{{ energy.planned.targetIn }}</b> kcal</div>
+              <div class="kcal-badge yellow">缺口 <b>{{ energy.planned.deficit }}</b> kcal</div>
+            </div>
+            <p style="font-size:14px;margin:2px 0">基础代谢 {{ store.data.profile.bmr }} + 训练 {{ energy.planned.exercise }} + EPOC {{ energy.planned.epoc }} + 步行{{ energy.planned.stepsK }}<span v-if="schedule?.work"> + 工作{{ energy.planned.extra }}</span></p>
           </div>
           <div class="col-6">
-            <h4>饮食建议</h4>
-            <p><b>早餐</b>: {{ meal.breakfast }}</p>
-            <p><b>训练前加餐</b>: {{ meal.snack }}</p>
-            <p><b>午餐</b>: {{ meal.lunch }}</p>
-            <p><b>晚餐</b>: {{ meal.dinner }}</p>
-            <p v-if="meal.night"><b>夜班建议</b>: {{ meal.night }}</p>
-            <p class="muted">{{ meal.hr }}</p>
+            <h4>🎯 宏量营养素目标</h4>
+            <div class="macro-bar" style="margin-bottom:8px">
+              <span class="pill" style="background:#ef4444;color:#fff;font-size:12px">蛋白质 {{ meal.macros.proteinG }}g</span>
+              <span class="pill" style="background:#f59e0b;color:#fff;font-size:12px">碳水 {{ meal.macros.carbG }}g</span>
+              <span class="pill" style="background:#3b82f6;color:#fff;font-size:12px">脂肪 {{ meal.macros.fatG }}g</span>
+            </div>
+            <p class="muted" style="font-size:12px">≈ {{ meal.macros.proteinKcal }} + {{ meal.macros.carbKcal }} + {{ meal.macros.fatKcal }} = <b>{{ meal.macros.totalMacroKcal }} kcal</b> · 角色：{{ meal.macros.roleLabel }}</p>
+            <h4 style="margin-top:12px">💧 补水目标</h4>
+            <p style="font-size:14px">基础 {{ meal.water.base }}ml<span v-if="meal.water.extra"> + 运动 {{ meal.water.extra }}ml</span> = <b>约 {{ (meal.water.total / 1000).toFixed(1) }}L</b></p>
           </div>
         </div>
+
+        <hr style="margin:14px 0">
+
+        <h4>🍳 四餐规划（早上训练）</h4>
+        <div class="meal-cards" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px">
+          <template v-for="m in ['breakfast','postWorkout','lunch','dinner']" :key="m">
+            <div class="meal-card" v-if="meal.meals[m]" :class="{ wide: m === 'lunch' || m === 'dinner' }">
+              <div class="meal-head">
+                <span class="meal-label">{{ meal.meals[m].label }}</span>
+                <span class="pill gray" style="font-size:11px">{{ meal.meals[m].time }}</span>
+                <span class="pill" style="font-size:11px;background:#dbeafe;color:#1e40af">{{ meal.meals[m].roughly }}</span>
+              </div>
+              <ul class="meal-examples">
+                <li v-for="(ex, ei) in meal.meals[m].examples.slice(0, 2)" :key="ei">{{ ex }}</li>
+              </ul>
+              <p class="muted" style="font-size:11px;margin:2px 0 0">{{ meal.meals[m].note }}</p>
+            </div>
+          </template>
+        </div>
+
+        <div v-if="meal.meals.snackNote" class="box" style="background:#fef3c7;border-color:#fbbf24;margin-top:10px;padding:8px 12px;font-size:13px">
+          ⏰ {{ meal.meals.snackNote }}
+        </div>
+
+        <div v-if="meal.nightShift && meal.meals.nightShift" class="box" style="background:#ede9fe;border-color:#c4b5fd;margin-top:8px;padding:8px 12px;font-size:13px">
+          <b>🌙 夜班：{{ meal.meals.nightShift.label }}</b><br>
+          {{ meal.meals.nightShift.examples[0] }} · {{ meal.meals.nightShift.roughly }} · {{ meal.meals.nightShift.note }}
+        </div>
+
+        <p class="muted" style="margin-top:10px;font-size:12px">{{ meal.hr }}</p>
+
         <div v-if="energy.actual" class="grid" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
           <div class="col-12"><h4>实际打卡数据</h4></div>
           <div class="col-3">运动消耗 {{ energy.actual.exercise }} kcal</div>
@@ -691,5 +721,47 @@ function openDayPicker(type, days) {
   color: #2e7d32;
 }
 
+.kcal-badge {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: center;
+  min-width: 100px;
+}
+.kcal-badge.blue { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+.kcal-badge.green { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.kcal-badge.yellow { background: #fefce8; color: #854d0e; border: 1px solid #fef08a; }
+.kcal-badge b { display: block; font-size: 18px; margin-top: 2px; }
+
+.meal-cards { }
+.meal-card {
+  flex: 1 1 calc(50% - 5px);
+  min-width: 200px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.meal-card.wide { flex: 1 1 100%; }
+.meal-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.meal-label {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+}
+.meal-examples {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+}
+.meal-examples li { margin-bottom: 2px; }
 
 </style>
