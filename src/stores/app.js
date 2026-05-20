@@ -58,6 +58,9 @@ export const useAppStore = defineStore('app', () => {
     return null
   })()
 
+  let autoPushTimer = null
+  let autoPushPending = false
+
   function getClassNames() {
     return calc.getClassNames(data.presets)
   }
@@ -79,8 +82,68 @@ export const useAppStore = defineStore('app', () => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)) } catch(e) {}
   }
 
+  async function pushToCloud() {
+    if (!supabaseClient || !syncCode.value) return
+    try {
+      const { data: rows, error } = await supabaseClient.rpc("push_planner_by_code", {
+        p_code: syncCode.value,
+        p_state: storage.mergeData(data)
+      })
+      if (error) throw error
+      if (rows && rows.length) cloudRevision.value = Number(rows[0].revision || 0)
+    } catch(e) {
+      console.warn("auto push failed:", e.message)
+    }
+  }
+
+  function scheduleAutoPush() {
+    if (!autoSyncEnabled.value || !supabaseClient || !syncCode.value) return
+    autoPushPending = true
+    if (autoPushTimer) clearTimeout(autoPushTimer)
+    autoPushTimer = setTimeout(() => {
+      autoPushPending = false
+      pushToCloud()
+    }, 2000)
+  }
+
   function saveData() {
     saveLocalOnly()
+    scheduleAutoPush()
+  }
+
+  async function pullFromCloud() {
+    if (!supabaseClient || !syncCode.value) return null
+    try {
+      const { data: rows, error } = await supabaseClient.rpc("pull_planner_by_code", { p_code: syncCode.value })
+      if (error) throw error
+      return rows && rows.length ? rows[0] : null
+    } catch(e) {
+      console.warn("pull from cloud failed:", e.message)
+      return null
+    }
+  }
+
+  async function initAutoSync() {
+    if (isFirstSessionCompleted.value) return
+    if (!syncCode.value || !supabaseClient) return
+
+    isSyncing.value = true
+    try {
+      const row = await pullFromCloud()
+      if (row && row.state) {
+        cloudRevision.value = Number(row.revision || 0)
+        const cloudState = storage.mergeData(row.state || {})
+        Object.assign(data, cloudState)
+        saveLocalOnly()
+      }
+      isFirstSessionCompleted.value = true
+      sessionStorage.setItem("hyrox_first_sync_completed", "true")
+      autoSyncEnabled.value = true
+    } catch(e) {
+      console.warn("init auto sync failed:", e.message)
+    } finally {
+      isSyncing.value = false
+    }
   }
 
   function normalizeScheduleItem(x) {
@@ -793,6 +856,8 @@ export const useAppStore = defineStore('app', () => {
     activeTab.value = id
   }
 
+  initAutoSync()
+
   return {
     data, scheduleViewStart, classViewStart, logViewDate, bodyStatsViewStart,
     currentToday, midnightTimer, activityDraft, activeTab, syncCode, cloudRevision,
@@ -806,6 +871,7 @@ export const useAppStore = defineStore('app', () => {
     selfPlanForRole, buildClassPlan,
     getStrengthPlan, RUN_PLANS, RUN_VARIANTS, STRENGTH_VARIANTS,
     getRecentLowerDominant, hasPrivateLegOnDate,
-    setTodayStatus, setTodaySleep, switchTab
+    setTodayStatus, setTodaySleep, switchTab,
+    initAutoSync, pushToCloud, pullFromCloud, scheduleAutoPush
   }
 })
