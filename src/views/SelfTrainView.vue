@@ -192,12 +192,12 @@ const expandedRun = ref(false)
 
 const showStrength = computed(() => {
   const role = plan.value?.role
-  return role === 'strength' || role === 'hyrox' || role === 'conditioning'
+  return role !== 'no_train' && role !== 'recovery'
 })
 
 const showRun = computed(() => {
   const role = plan.value?.role
-  return role === 'hyrox' || role === 'conditioning' || role === 'z2'
+  return role !== 'no_train' && role !== 'recovery'
 })
 
 const roleLabel = computed(() => {
