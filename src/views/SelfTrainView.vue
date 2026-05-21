@@ -7,7 +7,7 @@
           <span :class="['pill', plan.orientation === 'hyrox' ? '' : 'green']">
             {{ plan.orientation === 'hyrox' ? '🏆 HYROX导向' : '🏃 减脂导向' }}
           </span>
-          <span class="pill blue">{{ roleLabel }}</span>
+          
         </div>
       </div>
     </div>
