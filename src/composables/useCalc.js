@@ -207,7 +207,7 @@ export function useCalc() {
 
   function getRequiredCombat(className, presets) {
     const p = classPreset(className, presets)
-    if (p.requiredCombat != null) return p.requiredCombat
+    if (nval(p.requiredCombat, 0) > 0) return p.requiredCombat
     const met = nval(p.met, 5)
     const fatigue = nval(p.fatigue, 4)
     return Math.min(100, met * 7 + fatigue * 2.5)

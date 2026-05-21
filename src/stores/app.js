@@ -635,100 +635,101 @@ export const useAppStore = defineStore('app', () => {
     const tr = getTrainability(d)
     const role = decideRole(d, s, tr)
     const available = getClassesForDate(d)
-    const selected = tr.canTrain ? selectBestClass(d, role, available) : ""
-    const classPlan = selected ? buildClassPlan(selected, role, d, s) : null
-    const selfPlan = selfPlanForRole(d, role, s)
     const combat = calc.calcCombatPower(d, data.logs, data.schedule, data.profile, data.presets)
+    const budget = calc.getDailyBudget(d, data.logs, data.schedule, data.profile, data.presets)
+    const maxCourses = nval(data.profile.maxPackageCourses, 3)
+    const orientation = data.profile.trainingOrientation || "fatLoss"
+
+    const tomorrowHasPrivateLeg = hasPrivateLegOnDate(addDays(d, 1))
 
     let primaryItems = []
     let primaryReason = ""
     let alternativePlans = []
     let hasSpecifiedAlts = false
-    const todayHasPrivateLeg = hasPrivateLegOnDate(d)
+    let selected = ""
+    let classPlan = null
+    const hasPrivateTraining = available.includes("私教力量")
+    let selfPlan = hasPrivateTraining ? selfPlanForRole(d, "hyrox", s) : selfPlanForRole(d, role, s)
 
     if (!tr.canTrain) {
-      primaryItems = [
-        { type: "rest", plan: selfPlan }
-      ]
+      primaryItems = [{ type: "rest", plan: selfPlan }]
       primaryReason = s ? "上班第1天，上午无法训练" : "未排班，不可训练"
     } else {
-      const tomorrowHasPrivateLeg = hasPrivateLegOnDate(addDays(d, 1))
+      let totalALU = 0
+      let totalTime = 0
+      let courseCount = 0
 
-      if (todayHasPrivateLeg) {
-      primaryItems = [
-        { type: "class", plan: buildClassPlan("私教力量", role, d, s) }
-      ]
-      primaryReason = "今天练腿私教日，只保留私教"
-        alternativePlans = [
-          {
-            label: "改自助上肢力量",
-            items: [{ type: "selfStrength", plan: selfPlanForRole(d, "strength", s) }]
-          },
-          {
-            label: "只自助跑步",
-            items: [{ type: "selfRun", plan: selfPlanForRole(d, "hyrox", s) }]
-          }
-        ]
-        hasSpecifiedAlts = true
-      }
-      else if (tomorrowHasPrivateLeg) {
-      if (classPlan && selected !== "HYROX Complete") {
-        const runVariant = selectRunVariant(d, role)
-        primaryItems = [
-          { type: "class", plan: classPlan },
-          { type: "selfRun", plan: selfPlanForRole(d, "hyrox", s) } // 随便取个role，只要有跑步
-        ]
-        primaryReason = "明天练腿，今天推荐课程+跑步"
-      } else if (classPlan && selected === "HYROX Complete") {
-        primaryItems = [
-          { type: "class", plan: classPlan }
-        ]
-        primaryReason = "明天练腿，HYROX Complete建议悠着点"
-      } else {
-        primaryItems = [
-          { type: "selfStrength", plan: selfPlanForRole(d, "strength", s) },
-          { type: "selfRun", plan: selfPlanForRole(d, "hyrox", s) }
-        ]
-        primaryReason = "明天练腿，今天推荐上肢力量+跑步"
-      }
-    }
-    else {
-      if (classPlan) {
-        // 有课程，判断是否加跑步
-        if (combat >= 50 && role !== "recovery") {
-          const runVariant = selectRunVariant(d, role)
-          primaryItems = [
-            { type: "class", plan: classPlan },
-            { type: "selfRun", plan: selfPlanForRole(d, "hyrox", s) }
-          ]
-          primaryReason = "状态不错，推荐课程+跑步"
-        } else {
-          primaryItems = [
-            { type: "class", plan: classPlan }
-          ]
-          primaryReason = "状态一般，只推荐课程"
+      if (available.includes("私教力量")) {
+        const pp = calc.classPreset("私教力量", data.presets)
+        const alu = pp.duration * pp.met * ((pp.rpeMin + pp.rpeMax) / 2 / 10)
+        if (totalALU + alu <= budget && totalTime + pp.duration <= 240) {
+          primaryItems.push({ type: "class", plan: buildClassPlan("私教力量", role, d, s) })
+          totalALU += alu
+          totalTime += pp.duration
+          courseCount++
         }
-      } else {
-        // 没有课程，自助力量 + 跑步
-        if (combat >= 50 && role !== "recovery") {
-          primaryItems = [
-            { type: "selfStrength", plan: selfPlanForRole(d, "strength", s) },
-            { type: "selfRun", plan: selfPlanForRole(d, "hyrox", s) }
-          ]
-          primaryReason = "状态不错，推荐力量+跑步"
-        } else if (role !== "no_train" && role !== "recovery") {
-          primaryItems = [
-            { type: "selfRun", plan: selfPlanForRole(d, "z2", s) }
-          ]
-          primaryReason = "累了，只推荐跑步"
-        } else {
-          primaryItems = [
-            { type: "rest", plan: selfPlan }
-          ]
-          primaryReason = "恢复日"
+      }
+
+      const allCandidates = [...new Set([...available, "自助力量", "自助跑步", "Z2单车/椭圆机", "快走/坡走"])]
+      const filteredCandidates = allCandidates.filter(name => {
+        if (name === "私教力量") return false
+        if (name === "自助力量" && available.includes("私教力量")) return false
+        const reqCombat = calc.getRequiredCombat(name, data.presets)
+        if (reqCombat > combat) return false
+        if (tomorrowHasPrivateLeg) {
+          const p = calc.classPreset(name, data.presets)
+          if (p.isLeg && name !== "自助跑步") return false
         }
-    }
-    }
+        return true
+      })
+
+      const scored = filteredCandidates.map(name => {
+        const p = calc.classPreset(name, data.presets)
+        let value = 0
+        if (orientation === "hyrox") {
+          value = nval(p.hyrox, 0) * 0.6 + nval(p.met, 5) * 0.4
+        } else {
+          value = nval(p.met, 5) * 10
+        }
+        return { name, value, p }
+      }).sort((a, b) => b.value - a.value)
+
+      for (const item of scored) {
+        if (courseCount >= maxCourses) break
+        const itemALU = item.p.duration * item.p.met * ((item.p.rpeMin + item.p.rpeMax) / 2 / 10)
+        const itemTime = item.p.duration
+        if (totalALU + itemALU > budget) continue
+        if (totalTime + itemTime > 240) continue
+
+        totalALU += itemALU
+        totalTime += itemTime
+        courseCount++
+
+        if (item.name === "自助力量") {
+          primaryItems.push({ type: "selfStrength", plan: selfPlanForRole(d, "strength", s) })
+        } else if (item.name === "自助跑步") {
+          primaryItems.push({ type: "selfRun", plan: selfPlanForRole(d, "hyrox", s) })
+        } else {
+          primaryItems.push({ type: "class", plan: buildClassPlan(item.name, role, d, s) })
+          if (!selected) selected = item.name
+        }
+      }
+
+      if (primaryItems.length === 0) {
+        primaryItems = [{ type: "selfRun", plan: selfPlanForRole(d, "z2", s) }]
+        primaryReason = "预算较低，推荐低强度有氧"
+      } else {
+        const classCount = primaryItems.filter(x => x.type === "class").length
+        const hasStrength = primaryItems.some(x => x.type === "selfStrength" || (x.type === "class" && x.plan.name === "私教力量"))
+        const hasRun = primaryItems.some(x => x.type === "selfRun")
+        
+        let parts = []
+        if (classCount > 0) parts.push(`${classCount}门课程`)
+        if (hasStrength) parts.push("力量训练")
+        if (hasRun) parts.push("跑步")
+        
+        primaryReason = `状态不错，推荐${parts.join("+")}（总负荷 ${Math.round(totalALU)} / 预算 ${Math.round(budget)}）`
+      }
     }
 
     if (!hasSpecifiedAlts) {
@@ -742,10 +743,10 @@ export const useAppStore = defineStore('app', () => {
       })
     }
 
+    classPlan = primaryItems.find(x => x.type === "class")?.plan || null
     let targetPlan = primaryItems.find(x => x.plan && x.type !== "rest")?.plan || selfPlan
     const energy = estimateEnergy(d, targetPlan, s)
 
-    const orientation = data.profile.trainingOrientation || "fatLoss"
     let orientationTag = ""
     if (selfPlan.variantKey === "lsd") orientationTag = "减脂推荐"
     if (selfPlan.variantKey === "threshold") orientationTag = orientation === "hyrox" ? "比赛专项" : "耐力提升"
@@ -753,34 +754,6 @@ export const useAppStore = defineStore('app', () => {
     if (selfPlan.variantKey && ["fullA", "fullB", "fullC"].includes(selfPlan.variantKey)) orientationTag = orientation === "fatLoss" ? "全身减脂" : "全身基础"
     if (selfPlan.variantKey === "upper") orientationTag = "上肢塑形"
     if (selfPlan.variantKey === "lower") orientationTag = "下肢强化"
-
-    // 额外的课包保持不变
-    let extraPlan = null
-    if (tr.canTrain && role !== "no_train" && role !== "recovery" && selected) {
-      const secondAvailable = available.filter(c => {
-        if (c === selected) return false
-        if (todayHasPrivateLeg) {
-          const pp = calc.classPreset(c, data.presets)
-          if (pp.isLeg) return false
-        }
-        return true
-      })
-      if (secondAvailable.length > 0) {
-        const second = selectBestClass(d, role, secondAvailable)
-        if (second) {
-          const pp = calc.classPreset(second, data.presets)
-          const secondALU = pp.duration * pp.met * ((pp.rpeMin + pp.rpeMax) / 2 / 10)
-          const budget = calc.getDailyBudget(d, data.logs, data.schedule, data.profile, data.presets)
-          if (secondALU <= budget) extraPlan = buildClassPlan(second, role, d, s)
-        }
-      }
-    }
-    if (extraPlan) {
-      primaryItems.push({ type: "class", plan: extraPlan })
-    }
-    if (todayHasPrivateLeg && primaryItems.length > 1) {
-      primaryReason = "今天私教练腿日，搭配非腿主导课程"
-    }
 
     return {
       date: d, schedule: s, trainability: tr, role,

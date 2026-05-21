@@ -220,17 +220,6 @@
     </div>
 
     <div class="card">
-      <h3>📦 智能课包 <span v-if="plan.available.length > 0">({{ plan.available.length }}门可选)</span><span v-else>(无可选课)</span></h3>
-      <div v-if="pkg.fallback" class="warn">当天战斗力/预算不足以生成课包。优先使用官方课程/私教，或降低强度目标。</div>
-      <div v-else>
-        <div v-for="(item, i) in pkg.items" :key="i" class="box">
-          <span class="pill blue">{{ item.name }}</span> {{ item.p.duration }}分钟 · RPE {{ item.p.rpeMin }}-{{ item.p.rpeMax }} · 负荷 {{ Math.round(item.p.duration * item.p.met * ((item.p.rpeMin+item.p.rpeMax)/2/10)) }}
-        </div>
-        <div class="muted" style="margin-top:6px">总时长 {{ pkg.totalTime }}分钟 · 总负荷 {{ Math.round(pkg.totalALU) }} · 日预算 {{ Math.round(budget) }}</div>
-      </div>
-    </div>
-
-    <div class="card">
       <h3>🗓️ 未来 {{ totalDays }}天整体预览</h3>
       <div class="grid">
         <div class="col-3"><label>预览天数</label><input type="number" v-model="totalDays" @change="refreshHome" min="1" max="30"></div>
@@ -307,7 +296,6 @@ const meal = computed(() => {
   const primaryPlan = plan.value.primaryItems?.[0]?.plan || plan.value.selfPlan
   return store.mealAdvice(primaryPlan, plan.value.energy, schedule.value)
 })
-const pkg = computed(() => store.generatePackage(today.value))
 const budget = computed(() => calc.getDailyBudget(today.value, store.data.logs, store.data.schedule, store.data.profile, store.data.presets))
 const personalMax = computed(() => calc.getPersonalMax(store.data.logs, store.data.profile, store.data.presets))
 const al7 = computed(() => calc.getAL7(today.value, store.data.logs, store.data.schedule, store.data.profile, store.data.presets))

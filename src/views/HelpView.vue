@@ -20,12 +20,12 @@
         <div class="col-4"><div class="box" style="background:#ecfdf5;border-color:#6ee7b7">
           <div style="font-size:32px;text-align:center">⚔️</div>
           <h4>战斗力</h4>
-          <p style="font-size:13px">你今天能打多猛（0-100）。<br>睡得好+感觉好=战力高=推荐高强度。</p>
+          <p style="font-size:13px">你今天能打多猛（0-100）。<br>睡得好+感觉好=战力高。</p>
         </div></div>
         <div class="col-4"><div class="box" style="background:#eff6ff;border-color:#93c5fd">
-          <div style="font-size:32px;text-align:center">🎯</div>
-          <h4>训练角色</h4>
-          <p style="font-size:13px">战力决定角色：<br>🔴高→HYROX  🟡中→力量  🟢低→Z2有氧  ⚪很低→休息</p>
+          <div style="font-size:32px;text-align:center">💰</div>
+          <h4>日预算</h4>
+          <p style="font-size:13px">今天能练多狠（ALU）。<br>战力越高=预算越多=能练更多。</p>
         </div></div>
       </div>
     </div>
@@ -39,9 +39,9 @@
           <p>  ↓</p>
           <p>⚔️ <b>算战斗力</b> → 你今天能打多猛？</p>
           <p>  ↓</p>
-          <p>🎯 <b>定角色</b> → 该练什么类型？</p>
+          <p>💰 <b>算预算</b> → 今天能练多少？</p>
           <p>  ↓</p>
-          <p>🏆 <b>出方案</b> → 从课表里挑最好的课 + 自助训练</p>
+          <p>🏆 <b>出方案</b> → 按评分挑课，不超预算</p>
         </div>
       </div>
 
@@ -63,16 +63,16 @@
       <h4 style="margin-top:16px">⚡ 会自动避开的场景</h4>
       <div class="grid" style="gap:8px">
         <div class="col-6"><div class="box" style="padding:10px;font-size:13px">
-          🦵 <b>私教练腿日</b>：自动跳过所有腿类课程和下肢力量，只留私教。备选方案给上肢力量或纯跑步。
-        </div></div>
-        <div class="col-6"><div class="box" style="padding:10px;font-size:13px">
           🏢 <b>上班第1天</b>：上午没法练，直接推荐休息。
         </div></div>
         <div class="col-6"><div class="box" style="padding:10px;font-size:13px">
           🤒 <b>生病/不适</b>：战力直接归零，只推荐休息恢复。
         </div></div>
         <div class="col-6"><div class="box" style="padding:10px;font-size:13px">
-          📅 <b>明天练腿</b>：今天自动避开超高强度课程（如HYROX Complete）。
+          📅 <b>明天练腿</b>：今天自动避开下肢主导课程。
+        </div></div>
+        <div class="col-6"><div class="box" style="padding:10px;font-size:13px">
+          🏋️ <b>当天有私教</b>：不再推荐自助力量，可搭配跑步或其他课程。
         </div></div>
       </div>
     </div>
@@ -123,7 +123,7 @@
       </details>
     </div>
 
-    <div class="card"><h2>💪 战斗力与训练角色</h2>
+    <div class="card"><h2>💪 战斗力与日预算</h2>
       <div class="box">
         <div class="grid" style="gap:12px;margin-bottom:12px">
           <div class="col-6">
@@ -140,26 +140,29 @@
             </table>
           </div>
           <div class="col-6">
-            <h4>战力决定了角色</h4>
+            <h4>战力决定日预算</h4>
             <table style="width:100%">
-              <thead><tr><th>战力</th><th>角色</th></tr></thead>
+              <thead><tr><th>战力</th><th>日预算比例</th></tr></thead>
               <tbody>
-                <tr><td>≥ 70</td><td>🔴 HYROX 高强度</td></tr>
-                <tr><td>50-69</td><td>🟡 力量训练</td></tr>
-                <tr><td>30-49</td><td>🟢 Z2有氧</td></tr>
-                <tr><td>&lt; 30</td><td>⚪ 恢复休息</td></tr>
-                <tr><td>生病/不适</td><td>🚫 强制休息</td></tr>
+                <tr><td>100</td><td>� 100% 全力</td></tr>
+                <tr><td>70</td><td>� 52% 中高</td></tr>
+                <tr><td>50</td><td>� 35% 中等</td></tr>
+                <tr><td>30</td><td>💰 20% 保守</td></tr>
+                <tr><td>&lt; 30</td><td>� 20% 最低</td></tr>
               </tbody>
             </table>
+            <p class="muted" style="font-size:11px">预算 = 个人最大负荷 × (战力/100)^1.5</p>
           </div>
         </div>
 
-        <h4>训练导向</h4>
+        <h4>训练导向影响评分</h4>
         <div style="display:flex;gap:8px;margin-top:8px">
           <button :class="profile.trainingOrientation === 'fatLoss' ? 'primary' : 'secondary'" @click="setOrientation('fatLoss')">🏃 减脂</button>
           <button :class="profile.trainingOrientation === 'hyrox' ? 'primary' : 'secondary'" @click="setOrientation('hyrox')">🏆 HYROX比赛</button>
         </div>
-        <p class="muted" style="font-size:12px;margin-top:4px">当前：{{ profile.trainingOrientation === 'hyrox' ? '🏆 HYROX导向（偏向高强度和比赛专项）' : '🏃 减脂导向（偏向LSD燃脂跑）' }}</p>
+        <p class="muted" style="font-size:12px;margin-top:4px">
+          {{ profile.trainingOrientation === 'hyrox' ? '🏆 HYROX导向：评分 = HYROX价值×0.6 + MET×0.4' : '🏃 减脂导向：评分 = MET×10（只看消耗）' }}
+        </p>
       </div>
     </div>
 
@@ -185,10 +188,11 @@
       </div>
     </div>
 
-    <div class="card"><h2>📦 智能课包设置</h2>
+    <div class="card"><h2>📦 方案A设置</h2>
       <div class="box">
-        <p style="font-size:14px">课包 = 系统帮你把当天能上的课组合在一起，不超过预算。</p>
+        <p style="font-size:14px">方案A会自动从课表中挑选课程组合，总负荷不超过日预算。</p>
         <param-row label="最多几门课" v-model="params.maxPackageCourses" :default-val="3" :min="1" :max="5" />
+        <p class="muted" style="font-size:12px">方案A最多推荐的课程数量（含私教）</p>
 
         <h4 style="margin-top:12px">过高强度保护</h4>
         <p style="font-size:13px">连续高强度课太多时自动刹车。</p>
