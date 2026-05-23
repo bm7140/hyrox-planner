@@ -12,7 +12,7 @@
       </div>
     </div>
 
-    <div v-if="plan?.role === 'no_train'" class="card">
+    <div v-if="!plan?.selfPlan?.variant" class="card">
       <h3>🛌 今日安排</h3>
       <div class="box">
         <div v-for="(item, idx) in plan?.selfPlan?.items || []" :key="idx" style="margin-bottom:4px">
