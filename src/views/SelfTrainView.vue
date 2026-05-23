@@ -12,7 +12,7 @@
       </div>
     </div>
 
-    <div v-if="plan?.role === 'no_train' || plan?.role === 'recovery'" class="card">
+    <div v-if="plan?.role === 'no_train'" class="card">
       <h3>🛌 今日安排</h3>
       <div class="box">
         <div v-for="(item, idx) in plan?.selfPlan?.items || []" :key="idx" style="margin-bottom:4px">
@@ -22,7 +22,7 @@
     </div>
 
     <div v-else>
-      <div class="card" v-if="showStrength">
+      <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px">
           <h3 style="margin:0">💪 自助力量</h3>
           <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -96,7 +96,7 @@
         </div>
       </div>
 
-      <div class="card" v-if="showRun">
+      <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px">
           <h3 style="margin:0">🏃 自助跑步</h3>
           <div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -190,15 +190,7 @@ const selectedRunVariant = ref('lsd')
 const expandedStrength = ref(false)
 const expandedRun = ref(false)
 
-const showStrength = computed(() => {
-  const role = plan.value?.role
-  return role !== 'no_train' && role !== 'recovery'
-})
 
-const showRun = computed(() => {
-  const role = plan.value?.role
-  return role !== 'no_train' && role !== 'recovery'
-})
 
 const selectedLabel = computed(() => STRENGTH_VARIANTS[selectedStrengthVariant.value]?.label || '全身A')
 const selectedRunLabel = computed(() => RUN_VARIANTS[selectedRunVariant.value]?.label || 'LSD 燃脂跑')
