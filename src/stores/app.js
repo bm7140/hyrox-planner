@@ -649,11 +649,12 @@ export const useAppStore = defineStore('app', () => {
     let selected = ""
     let classPlan = null
     const hasPrivateTraining = available.includes("私教力量")
-    let selfPlan = hasPrivateTraining ? selfPlanForRole(d, "hyrox", s) : selfPlanForRole(d, role, s)
+    const selfPlanRole = hasPrivateTraining ? "hyrox" : (tr.canTrain ? role : "hyrox")
+    let selfPlan = selfPlanForRole(d, selfPlanRole, s)
 
     if (!tr.canTrain) {
-      primaryItems = [{ type: "rest", plan: selfPlan }]
-      primaryReason = s ? "上班第1天，上午不可安排课程" : "未排班，不可安排课程"
+      primaryItems = [{ type: "selfStrength", plan: selfPlanForRole(d, "strength", s) }, { type: "selfRun", plan: selfPlan }]
+      primaryReason = s ? "上班第1天，上午不可安排课程，推荐自助训练" : "未排班，不可安排课程，推荐自助训练"
     } else {
       let totalALU = 0
       let totalTime = 0
