@@ -240,7 +240,7 @@
             <div>
               <b>{{ dateLabel(d) }}</b>
               <span v-if="!p.trainability.canTrain" class="pill gray">休息</span>
-              <span v-else class="pill green">可训练</span>
+              <span v-else class="pill green">可安排课程</span>
               <span v-if="p.schedule?.nightShift" class="pill orange">夜班</span>
               <span v-if="p.orientation === 'hyrox'" class="pill" style="background:#fff3e0;color:#e65100">🏆</span>
               <span v-else class="pill" style="background:#e8f5e9;color:#2e7d32">🏃</span>
@@ -413,7 +413,7 @@ const acwrPill = computed(() => {
 })
 
 function roleLabel(role) {
-  const m = { no_train: '不可训练', recovery: '恢复', z2: 'Z2有氧', strength: '力量', hyrox: 'HYROX', conditioning: '综合体能', rest: '完全休息' }
+  const m = { no_train: '不可安排课程', recovery: '恢复', z2: 'Z2有氧', strength: '力量', hyrox: 'HYROX', conditioning: '综合体能', rest: '完全休息' }
   return m[role] || role
 }
 

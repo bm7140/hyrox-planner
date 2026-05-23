@@ -18,7 +18,7 @@
         <div class="col-3"><label>批量开始日期</label><input type="date" v-model="bulkStart"></div>
         <div class="col-3"><label>批量结束日期</label><input type="date" v-model="bulkEnd"></div>
         <div class="col-3"><label>应用方式</label><select v-model="bulkMode"><option value="add">追加到已有课表</option><option value="replace">替换当天课表</option><option value="remove">从当天课表移除</option></select></div>
-        <div class="col-3"><label>应用日期</label><select v-model="bulkFilter"><option value="all">范围内所有日期</option><option value="trainable">仅可训练日</option><option value="rest">仅休息日 Day3/Day4</option><option value="work2">仅上班第2天 Day2</option><option value="noNight">排除夜班日</option></select></div>
+        <div class="col-3"><label>应用日期</label><select v-model="bulkFilter"><option value="all">范围内所有日期</option><option value="trainable">仅可安排课程日</option><option value="rest">仅休息日 Day3/Day4</option><option value="work2">仅上班第2天 Day2</option><option value="noNight">排除夜班日</option></select></div>
       </div>
       <div class="box"><h3>选择要批量应用的课程</h3>
         <div class="grid">
@@ -37,8 +37,8 @@
       </div>
       <div class="box"><h3>快捷操作</h3>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="primary" @click="quickAddPrivateToTrainable(14)">未来14天可训练日加入私教力量</button>
-          <button class="primary" @click="quickAddPrivateToTrainable(30)">未来30天可训练日加入私教力量</button>
+          <button class="primary" @click="quickAddPrivateToTrainable(14)">未来14天可安排课程日加入私教力量</button>
+          <button class="primary" @click="quickAddPrivateToTrainable(30)">未来30天可安排课程日加入私教力量</button>
           <button class="secondary" @click="copyOneDayClassesToRange">把某一天课表复制到日期范围</button>
         </div>
       </div>
@@ -179,7 +179,7 @@ function quickAddPrivateToTrainable(days) {
   }
   store.saveData()
   store.classViewStart = start
-  alert(`已给未来 ${days} 天内 ${changed} 个可训练日加入"私教力量"。`)
+  alert(`已给未来 ${days} 天内 ${changed} 个可安排课程日加入"私教力量"。`)
 }
 
 function copyOneDayClassesToRange() {
@@ -191,7 +191,7 @@ function copyOneDayClassesToRange() {
   if (!start) return
   const end = prompt("请输入复制结束日期：", addDays(start, 13))
   if (!end || end < start) return alert("结束日期不能早于开始日期")
-  const onlyTrainable = confirm("是否只复制到可训练日？")
+  const onlyTrainable = confirm("是否只复制到可安排课程日？")
   const totalDays = diffDays(end, start) + 1
   if (totalDays > 180 && !confirm(`你选择了 ${totalDays} 天，范围较大，确定继续？`)) return
   const ts = nowISO()

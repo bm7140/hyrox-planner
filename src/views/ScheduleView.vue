@@ -2,7 +2,7 @@
   <div>
     <div class="card">
       <h2>排班生成</h2>
-      <div class="notice">规则：上2休2。Day1 上班第1天不可训练；Day2 上班第2天上午可训练但可能夜班；Day3/Day4 休息可训练。训练窗口默认 {{ store.data.profile.trainWindow }}。</div>
+      <div class="notice">规则：上2休2。Day1 上班第1天不可安排课程；Day2 上班第2天上午可安排课程但可能夜班；Day3/Day4 休息可安排课程。训练窗口默认 {{ store.data.profile.trainWindow }}。</div>
       <div class="grid" style="margin-top:12px">
         <div class="col-3"><label>起始日期</label><input type="date" v-model="startDate"></div>
         <div class="col-3"><label>起始周期日</label><select v-model="startCycleDay">
@@ -25,7 +25,7 @@
       <h2>排班列表 / 可二次调整</h2>
       <div v-if="dates.length" class="table-wrapper">
         <table>
-          <thead><tr><th>日期</th><th>周期</th><th>工作状态</th><th>可训练</th><th>夜班</th><th>夜班负荷</th><th>训练窗口</th><th>状态/备注</th></tr></thead>
+          <thead><tr><th>日期</th><th>周期</th><th>工作状态</th><th>可安排课程</th><th>夜班</th><th>夜班负荷</th><th>训练窗口</th><th>状态/备注</th></tr></thead>
           <tbody><tr v-for="d in dates" :key="d">
             <td>{{ dateLabel(d) }}</td>
             <td><select @change="editSchedule(d, 'cycleDay', ($event.target).value)">
@@ -33,8 +33,8 @@
             </select></td>
             <td>{{ getPhaseLabel(d) }}<div class="muted">{{ getScheduleItem(d)?.work ? "上班" : "休息" }}</div></td>
             <td><select @change="editSchedule(d, 'canTrain', ($event.target).value)">
-              <option value="true" :selected="getScheduleItem(d)?.canTrain">可训练</option>
-              <option value="false" :selected="!getScheduleItem(d)?.canTrain">不可训练</option>
+              <option value="true" :selected="getScheduleItem(d)?.canTrain">可安排课程</option>
+              <option value="false" :selected="!getScheduleItem(d)?.canTrain">不可安排课程</option>
             </select></td>
             <td><select @change="editSchedule(d, 'nightShift', ($event.target).value)">
               <option value="false" :selected="!getScheduleItem(d)?.nightShift">非夜班</option>
@@ -47,7 +47,7 @@
             </td>
             <td><input :value="getScheduleItem(d)?.trainWindow || ''" @change="editSchedule(d, 'trainWindow', ($event.target).value)" placeholder="09:30-13:30"></td>
             <td>
-              <span :class="`pill ${getTrainability(d).canTrain ? 'green' : 'gray'}`">{{ getTrainability(d).canTrain ? '可训练' : '不可训练' }}</span>
+              <span :class="`pill ${getTrainability(d).canTrain ? 'green' : 'gray'}`">{{ getTrainability(d).canTrain ? '可安排课程' : '不可安排课程' }}</span>
               <span v-if="getScheduleItem(d)?.nightShift" class="pill orange">夜班</span>
               <div class="muted">{{ getTrainability(d).reason }}</div>
               <input style="margin-top:6px" :value="getScheduleItem(d)?.note || ''" @change="editSchedule(d, 'note', ($event.target).value)" placeholder="备注">

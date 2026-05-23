@@ -179,9 +179,9 @@ export const useAppStore = defineStore('app', () => {
   function getTrainability(d) {
     const s = normalizeScheduleItem(data.schedule[d])
     if (!s) return { canTrain: false, reason: "未排班", window: "", nightShift: false }
-    if (!s.canTrain) return { canTrain: false, reason: "上班第1天，上午不可训练", window: "", nightShift: false }
-    if (s.nightShift) return { canTrain: true, reason: "上午可训练，但当天夜班，建议降级控制强度", window: s.trainWindow || data.profile.trainWindow, nightShift: true }
-    return { canTrain: true, reason: "上午09:30-13:30可训练", window: s.trainWindow || data.profile.trainWindow, nightShift: false }
+    if (!s.canTrain) return { canTrain: false, reason: "上班第1天，上午不可安排课程", window: "", nightShift: false }
+    if (s.nightShift) return { canTrain: true, reason: "上午可安排课程，但当天夜班，建议降级控制强度", window: s.trainWindow || data.profile.trainWindow, nightShift: true }
+    return { canTrain: true, reason: "上午09:30-13:30可安排课程", window: s.trainWindow || data.profile.trainWindow, nightShift: false }
   }
 
   function decideRole(d, s, tr) {
@@ -653,7 +653,7 @@ export const useAppStore = defineStore('app', () => {
 
     if (!tr.canTrain) {
       primaryItems = [{ type: "rest", plan: selfPlan }]
-      primaryReason = s ? "上班第1天，上午无法训练" : "未排班，不可训练"
+      primaryReason = s ? "上班第1天，上午不可安排课程" : "未排班，不可安排课程"
     } else {
       let totalALU = 0
       let totalTime = 0

@@ -1,5 +1,5 @@
 export const ROLE_META = {
-  no_train: { label: "不可训练/工作日", deficit: 500, minIn: 1850, steps: 7000 },
+  no_train: { label: "不可安排课程", deficit: 500, minIn: 1850, steps: 7000 },
   recovery: { label: "恢复/活动度", deficit: 400, minIn: 1900, steps: 7500 },
   z2: { label: "Z2有氧", deficit: 400, minIn: 2000, steps: 8500 },
   strength: { label: "力量专项", deficit: 300, minIn: 2150, steps: 9000 },
