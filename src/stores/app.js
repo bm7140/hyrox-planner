@@ -769,43 +769,7 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  function generatePackage(d) {
-    const combat = calc.calcCombatPower(d, data.logs, data.schedule, data.profile, data.presets)
-    const budget = calc.getDailyBudget(d, data.logs, data.schedule, data.profile, data.presets)
-    const maxCourses = nval(data.profile.maxPackageCourses, 3)
-    const protectThreshold = nval(data.profile.highIntensityProtectThreshold, 8)
-    const protectAcceptable = nval(data.profile.protectAcceptableFatigue, 4)
-    const availableClasses = getClassesForDate(d)
-    const selfServiceClasses = ["自助力量", "自助跑步", "Z2单车/椭圆机", "快走/坡走", "瑜伽静态拉伸", "普拉提核心"]
-    const allCandidates = [...new Set([...availableClasses, ...selfServiceClasses])]
-    const filtered = allCandidates.filter(name => {
-      const reqCombat = calc.getRequiredCombat(name, data.presets)
-      return reqCombat <= combat
-    })
-    const scored = filtered.map(name => {
-      const p = calc.classPreset(name, data.presets)
-      const value = nval(p.hyrox, 0) * 0.6 + nval(p.met, 5) * 0.4
-      return { name, value, p }
-    }).sort((a, b) => b.value - a.value)
-    const packageItems = []
-    let totalALU = 0, totalTime = 0, avgFatigue = 0
-    for (const item of scored) {
-      if (packageItems.length >= maxCourses) break
-      const itemALU = item.p.duration * item.p.met * ((item.p.rpeMin + item.p.rpeMax) / 2 / 10)
-      const itemTime = item.p.duration
-      if (totalALU + itemALU > budget) continue
-      if (totalTime + itemTime > 240) continue
-      if (avgFatigue >= protectThreshold && item.p.fatigue > protectAcceptable) continue
-      packageItems.push(item)
-      totalALU += itemALU
-      totalTime += itemTime
-      avgFatigue = packageItems.reduce((sum, i) => sum + i.p.fatigue, 0) / packageItems.length
-    }
-    if (packageItems.length === 0) {
-      return { items: [{ name: "休息/轻度拉伸", p: calc.classPreset("瑜伽静态拉伸", data.presets) }], totalALU: 0, totalTime: 0, fallback: true }
-    }
-    return { items: packageItems, totalALU, totalTime, fallback: false }
-  }
+
 
   function setTodayStatus(val) {
     if (!val) return
@@ -838,7 +802,7 @@ export const useAppStore = defineStore('app', () => {
     getClassNames, getLogTypes, getClassesForDate, setClassesForDate,
     saveLocalOnly, saveData, scheduleTemplate, normalizeScheduleItem,
     phaseLabel, roleLabel, getTrainability, makePlan,
-    estimateEnergy, mealAdvice, generatePackage,
+    estimateEnergy, mealAdvice,
     classScoreForRole, selectBestClass,
     selectRunVariant, selectStrengthVariant,
     selfPlanForRole, buildClassPlan,

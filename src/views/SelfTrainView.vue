@@ -7,7 +7,6 @@
           <span :class="['pill', plan.orientation === 'hyrox' ? '' : 'green']">
             {{ plan.orientation === 'hyrox' ? '🏆 HYROX导向' : '🏃 减脂导向' }}
           </span>
-          
         </div>
       </div>
     </div>
@@ -189,8 +188,6 @@ const selectedStrengthVariant = ref('fullA')
 const selectedRunVariant = ref('lsd')
 const expandedStrength = ref(false)
 const expandedRun = ref(false)
-
-
 
 const selectedLabel = computed(() => STRENGTH_VARIANTS[selectedStrengthVariant.value]?.label || '全身A')
 const selectedRunLabel = computed(() => RUN_VARIANTS[selectedRunVariant.value]?.label || 'LSD 燃脂跑')
