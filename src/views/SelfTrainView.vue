@@ -250,7 +250,7 @@ watch(() => strengthVariant.value?.key, (newKey) => {
 })
 
 watch(() => plan.value?.selfPlan?.variant?.key, (newKey) => {
-  if (newKey) selectedRunVariant.value = newKey
+  if (newKey && RUN_VARIANTS[newKey]) selectedRunVariant.value = newKey
 })
 </script>
 
