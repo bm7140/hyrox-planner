@@ -200,12 +200,6 @@ const showRun = computed(() => {
   return role !== 'no_train' && role !== 'recovery'
 })
 
-const roleLabel = computed(() => {
-  const role = plan.value?.role
-  const m = { strength: '力量日', hyrox: '综合训练日', z2: '有氧日', recovery: '恢复日', no_train: '休息日' }
-  return m[role] || role || ''
-})
-
 const selectedLabel = computed(() => STRENGTH_VARIANTS[selectedStrengthVariant.value]?.label || '全身A')
 const selectedRunLabel = computed(() => RUN_VARIANTS[selectedRunVariant.value]?.label || 'LSD 燃脂跑')
 
@@ -247,10 +241,6 @@ function goToLog() {
 
 watch(() => strengthVariant.value?.key, (newKey) => {
   if (newKey) selectedStrengthVariant.value = newKey
-})
-
-watch(() => plan.value?.selfPlan?.variant?.key, (newKey) => {
-  if (newKey && RUN_VARIANTS[newKey]) selectedRunVariant.value = newKey
 })
 </script>
 
