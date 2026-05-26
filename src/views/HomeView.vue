@@ -204,8 +204,6 @@
           {{ meal.meals.nightShift.examples[0] }} · {{ meal.meals.nightShift.roughly }} · {{ meal.meals.nightShift.note }}
         </div>
 
-        <p class="muted" style="margin-top:10px;font-size:12px">{{ meal.hr }}</p>
-
         <div v-if="energy.actual" class="grid" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
           <div class="col-12"><h4>实际打卡数据</h4></div>
           <div class="col-3">运动消耗 {{ energy.actual.exercise }} kcal</div>
