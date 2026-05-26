@@ -621,11 +621,20 @@ export const useAppStore = defineStore('app', () => {
     const meals = genMeals(role, orientation, kcal, bw, deficit)
 
     const isHigh = ["hyrox", "complete", "conditioning"].includes(role)
-    const selfRun = role === "hyrox" || role === "conditioning"
+    const isRunVariant = plan.variantKey && ["lsd", "threshold", "vo2max"].includes(plan.variantKey)
     const z2 = role === "z2"
     const recovery = ["recovery", "rest", "no_train"].includes(role)
 
-    let hr = selfRun ? `心率提醒：${getRunHRDisplay(plan.variant || { key: "lsd" })}。` : isHigh ? `心率提醒：训练大部分控制在 ${data.profile.steadyHrLow}-${data.profile.steadyHrHigh} bpm，短时间可到 ${data.profile.thresholdHrLow}-${data.profile.thresholdHrHigh}，避免长时间超过 LTHR ${lthr}。` : z2 ? `心率提醒：Z2 控制在 ${data.profile.z2HrLow}-${data.profile.z2HrHigh} bpm。` : recovery ? `心率提醒：恢复区 ${data.profile.recoveryHrLow}-${data.profile.recoveryHrHigh} bpm。` : `心率提醒：力量训练以RPE为主，组间避免长期顶到 LTHR ${lthr} 以上。`
+    let hr = ""
+    if (isRunVariant) {
+      hr = `心率提醒：${getRunHRDisplay(plan.variant || { key: "lsd" })}。`
+    } else if (isHigh) {
+      hr = `心率提醒：训练大部分控制在 ${data.profile.steadyHrLow}-${data.profile.steadyHrHigh} bpm，短时间可到 ${data.profile.thresholdHrLow}-${data.profile.thresholdHrHigh}，避免长时间超过 LTHR ${lthr}。`
+    } else if (z2) {
+      hr = `心率提醒：Z2 控制在 ${data.profile.z2HrLow}-${data.profile.z2HrHigh} bpm。`
+    } else if (recovery) {
+      hr = `心率提醒：恢复区 ${data.profile.recoveryHrLow}-${data.profile.recoveryHrHigh} bpm。`
+    }
 
     return { kcal, macros, water, meals, hr, nightShift: s?.nightShift }
   }
