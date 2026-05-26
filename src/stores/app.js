@@ -717,8 +717,13 @@ export const useAppStore = defineStore('app', () => {
       }
 
       if (primaryItems.length === 0) {
-        primaryItems = [{ type: "selfRun", plan: selfPlanForRole(d, "z2", s) }]
-        primaryReason = "预算较低，推荐低强度有氧"
+        if (combat >= 40) {
+          primaryItems = [{ type: "selfStrength", plan: selfPlanForRole(d, "strength", s) }]
+          primaryReason = "无合适课程，推荐力量训练"
+        } else {
+          primaryItems = [{ type: "selfRun", plan: selfPlanForRole(d, "z2", s) }]
+          primaryReason = "战力不足，推荐低强度有氧"
+        }
       } else {
         const classCount = primaryItems.filter(x => x.type === "class").length
         const hasStrength = primaryItems.some(x => x.type === "selfStrength" || (x.type === "class" && x.plan.name === "私教力量"))
@@ -734,13 +739,28 @@ export const useAppStore = defineStore('app', () => {
     }
 
     if (!hasSpecifiedAlts) {
+      const planB = [{ type: "selfStrength", plan: selfPlanForRole(d, "strength", s) }]
+      const strengthALU = selfPlanForRole(d, "strength", s)?.duration * 5 * 6.5 / 10 || 0
+      const remainingBudget = budget - strengthALU
+      let planBExtra = null
+      for (const item of scored) {
+        if (item.name === "自助力量" || item.name === "自助跑步") continue
+        if (item.name === "私教力量" && available.includes("私教力量")) continue
+        const itemALU = item.p.duration * item.p.met * ((item.p.rpeMin + item.p.rpeMax) / 2 / 10)
+        if (itemALU <= remainingBudget) {
+          planBExtra = { type: "class", plan: buildClassPlan(item.name, role, d, s) }
+          break
+        }
+      }
+      if (planBExtra) planB.push(planBExtra)
       alternativePlans.push({
-        label: "方案B：只保留力量/课程（去掉跑步）",
-        items: primaryItems.filter(x => x.type !== "selfRun")
+        label: "方案B：力量训练" + (planBExtra ? "+课程" : ""),
+        items: planB
       })
+
       alternativePlans.push({
-        label: "方案C：只跑步（去掉力量/课程）",
-        items: primaryItems.filter(x => x.type !== "selfStrength" && x.type !== "class")
+        label: "方案C：只有跑步",
+        items: [{ type: "selfRun", plan: selfPlanForRole(d, "hyrox", s) }]
       })
     }
 
