@@ -652,6 +652,30 @@ export const useAppStore = defineStore('app', () => {
     const selfPlanRole = hasPrivateTraining ? "hyrox" : (tr.canTrain ? role : "hyrox")
     let selfPlan = selfPlanForRole(d, selfPlanRole, s)
 
+    const allCandidates = [...new Set([...available, "自助力量", "自助跑步", "Z2单车/椭圆机", "快走/坡走"])]
+    const filteredCandidates = allCandidates.filter(name => {
+      if (name === "私教力量") return false
+      if (name === "自助力量" && available.includes("私教力量")) return false
+      const reqCombat = calc.getRequiredCombat(name, data.presets)
+      if (reqCombat > combat) return false
+      if (tomorrowHasPrivateLeg) {
+        const p = calc.classPreset(name, data.presets)
+        if (p.isLeg && name !== "自助跑步") return false
+      }
+      return true
+    })
+
+    const scored = filteredCandidates.map(name => {
+      const p = calc.classPreset(name, data.presets)
+      let value = 0
+      if (orientation === "hyrox") {
+        value = nval(p.hyrox, 0) * 0.6 + nval(p.met, 5) * 0.4
+      } else {
+        value = nval(p.met, 5) * 10
+      }
+      return { name, value, p }
+    }).sort((a, b) => b.value - a.value)
+
     if (!tr.canTrain) {
       primaryItems = [{ type: "selfStrength", plan: selfPlanForRole(d, "strength", s) }, { type: "selfRun", plan: selfPlan }]
       primaryReason = s ? "上班第1天，上午不可安排课程，推荐自助训练" : "未排班，不可安排课程，推荐自助训练"
@@ -670,30 +694,6 @@ export const useAppStore = defineStore('app', () => {
           courseCount++
         }
       }
-
-      const allCandidates = [...new Set([...available, "自助力量", "自助跑步", "Z2单车/椭圆机", "快走/坡走"])]
-      const filteredCandidates = allCandidates.filter(name => {
-        if (name === "私教力量") return false
-        if (name === "自助力量" && available.includes("私教力量")) return false
-        const reqCombat = calc.getRequiredCombat(name, data.presets)
-        if (reqCombat > combat) return false
-        if (tomorrowHasPrivateLeg) {
-          const p = calc.classPreset(name, data.presets)
-          if (p.isLeg && name !== "自助跑步") return false
-        }
-        return true
-      })
-
-      const scored = filteredCandidates.map(name => {
-        const p = calc.classPreset(name, data.presets)
-        let value = 0
-        if (orientation === "hyrox") {
-          value = nval(p.hyrox, 0) * 0.6 + nval(p.met, 5) * 0.4
-        } else {
-          value = nval(p.met, 5) * 10
-        }
-        return { name, value, p }
-      }).sort((a, b) => b.value - a.value)
 
       for (const item of scored) {
         if (courseCount >= maxCourses) break
