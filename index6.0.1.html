@@ -518,6 +518,7 @@ canvas {
         let classViewStart = todayStr();
         let logViewDate = todayStr();
         let bodyStatsViewStart = todayStr();
+        let bodyCompShow = { bodyFatPercent: true, muscleMass: true, skeletalMuscleMass: true };
         let currentToday = todayStr();
         let midnightTimer = null;
         let activityDraft = [];
@@ -2954,6 +2955,49 @@ function decideRole(d, s, tr) {
         /* =========================================================
            身体维度页面（修复按钮无响应问题）
         ========================================================= */
+        function toggleCompShow(field, checked) {
+            bodyCompShow[field] = checked;
+            // 获取当前页面数据并重绘图表（不重新渲染整个页面以避免闪烁）
+            const startEl = document.getElementById("bsStart");
+            const endEl = document.getElementById("bsEnd");
+            const start = startEl?.value || "2000-01-01";
+            const end = endEl?.value || "2099-12-31";
+            const rows = Object.entries(data.bodyStats || {})
+                .filter(([d]) => betweenDate(d, start, end))
+                .sort((a, b) => a[0].localeCompare(b[0]));
+            if (rows.length >= 2) {
+                setTimeout(() => {
+                    try {
+                        const compCanvas = document.getElementById("bodyCompChart");
+                        if (!compCanvas) return;
+                        compCanvas.style.width = "100%";
+                        compCanvas.style.height = "280px";
+                        const compFields = [];
+                        const compLabels = [];
+                        const compColors = [];
+                        if (bodyCompShow.bodyFatPercent) { compFields.push("bodyFatPercent"); compLabels.push("体脂率%"); compColors.push("#dc2626"); }
+                        if (bodyCompShow.muscleMass) { compFields.push("muscleMass"); compLabels.push("肌肉量kg"); compColors.push("#16a34a"); }
+                        if (bodyCompShow.skeletalMuscleMass) { compFields.push("skeletalMuscleMass"); compLabels.push("骨骼肌量kg"); compColors.push("#7c3aed"); }
+                        if (compFields.length > 0) {
+                            drawBodyLineChart("bodyCompChart", rows, compFields, compLabels, compColors);
+                        } else {
+                            const ctx = compCanvas.getContext("2d");
+                            const w = compCanvas.width / (window.devicePixelRatio || 1);
+                            const h = 280;
+                            ctx.fillStyle = "#fff";
+                            ctx.fillRect(0, 0, w * (window.devicePixelRatio || 1), h * (window.devicePixelRatio || 1));
+                            ctx.fillStyle = "#6b7280";
+                            ctx.font = "14px -apple-system,sans-serif";
+                            ctx.textAlign = "center";
+                            ctx.fillText("请至少选择一项指标", w / 2, h / 2);
+                        }
+                    } catch (e) {
+                        console.error("重绘身体成分图表失败:", e);
+                    }
+                }, 50);
+            }
+        }
+
         function updateBodyRange() {
             const startEl = document.getElementById("bsStart");
             bodyStatsViewStart = startEl?.value || addDays(todayStr(), -27);
@@ -3012,7 +3056,21 @@ function decideRole(d, s, tr) {
 </div>
                   ${rows.length >= 2 ? `
                   <canvas id="bodyWeightChart" width="600" height="280" style="width:100%;height:280px;margin-top:12px"></canvas>
-<canvas id="bodyCompChart" width="600" height="280" style="width:100%;height:280px;margin-top:12px"></canvas>
+<div style="margin-top:12px">
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+    <span style="font-size:13px;color:#374151;align-self:center">身体成分图表显示：</span>
+    <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;user-select:none">
+      <input type="checkbox" id="compShowBFP" ${bodyCompShow.bodyFatPercent ? 'checked' : ''} onchange="toggleCompShow('bodyFatPercent', this.checked)"><span style="color:#dc2626">体脂率%</span>
+    </label>
+    <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;user-select:none">
+      <input type="checkbox" id="compShowMM" ${bodyCompShow.muscleMass ? 'checked' : ''} onchange="toggleCompShow('muscleMass', this.checked)"><span style="color:#16a34a">肌肉量kg</span>
+    </label>
+    <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;user-select:none">
+      <input type="checkbox" id="compShowSMM" ${bodyCompShow.skeletalMuscleMass ? 'checked' : ''} onchange="toggleCompShow('skeletalMuscleMass', this.checked)"><span style="color:#7c3aed">骨骼肌量kg</span>
+    </label>
+  </div>
+  <canvas id="bodyCompChart" width="600" height="280" style="width:100%;height:280px"></canvas>
+</div>
 <canvas id="bodyCircChart" width="600" height="280" style="width:100%;height:280px;margin-top:12px"></canvas>
                   ` : `<div class="muted" style="margin-top:12px">需要至少2条记录才能绘制趋势图。</div>`}
                 </div>
@@ -3044,8 +3102,29 @@ function decideRole(d, s, tr) {
                             if (circCanvas) { circCanvas.style.width = "100%"; circCanvas.style.height = "280px"; }
                             
                             drawBodyLineChart("bodyWeightChart", rows, ["weight"], ["体重 kg"], ["#2563eb"]);
-                            drawBodyLineChart("bodyCompChart", rows, ["bodyFatPercent", "muscleMass", "skeletalMuscleMass"],
-                                ["体脂率%", "肌肉量kg", "骨骼肌量kg"], ["#dc2626", "#16a34a", "#7c3aed"]);
+                            // 根据勾选状态过滤身体成分图表的字段
+                            const compFields = [];
+                            const compLabels = [];
+                            const compColors = [];
+                            if (bodyCompShow.bodyFatPercent) { compFields.push("bodyFatPercent"); compLabels.push("体脂率%"); compColors.push("#dc2626"); }
+                            if (bodyCompShow.muscleMass) { compFields.push("muscleMass"); compLabels.push("肌肉量kg"); compColors.push("#16a34a"); }
+                            if (bodyCompShow.skeletalMuscleMass) { compFields.push("skeletalMuscleMass"); compLabels.push("骨骼肌量kg"); compColors.push("#7c3aed"); }
+                            if (compFields.length > 0) {
+                                drawBodyLineChart("bodyCompChart", rows, compFields, compLabels, compColors);
+                            } else {
+                                // 清空画布并显示提示
+                                if (compCanvas) {
+                                    const ctx = compCanvas.getContext("2d");
+                                    const w = compCanvas.width / (window.devicePixelRatio || 1);
+                                    const h = 280;
+                                    ctx.fillStyle = "#fff";
+                                    ctx.fillRect(0, 0, w * (window.devicePixelRatio || 1), h * (window.devicePixelRatio || 1));
+                                    ctx.fillStyle = "#6b7280";
+                                    ctx.font = "14px -apple-system,sans-serif";
+                                    ctx.textAlign = "center";
+                                    ctx.fillText("请至少选择一项指标", w / 2, h / 2);
+                                }
+                            }
                             drawBodyLineChart("bodyCircChart", rows, ["chest", "waist", "hip"],
                                 ["胸围cm", "腰围cm", "臀围cm"], ["#2563eb", "#f97316", "#16a34a"]);
                         } catch (e) {
