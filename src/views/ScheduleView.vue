@@ -132,7 +132,6 @@ function editSchedule(d, k, v) {
   else if (!s.trainWindow) s.trainWindow = store.data.profile.trainWindow
   s.updatedAt = nowISO()
   store.data.schedule[d] = s
-  store.scheduleViewStart = d
   store.saveData()
 }
 
