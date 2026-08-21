@@ -42,7 +42,21 @@
       </div>
       <div v-if="chartRows.length >= 2" style="margin-top:12px">
         <canvas ref="weightCanvas" width="600" height="280" style="width:100%;height:280px"></canvas>
-        <canvas ref="compCanvas" width="600" height="280" style="width:100%;height:280px;margin-top:12px"></canvas>
+        <div style="margin-top:12px">
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+            <span style="font-size:13px;color:#374151;align-self:center">身体成分图表显示：</span>
+            <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;user-select:none">
+              <input type="checkbox" v-model="compShow.bodyFatPercent" @change="updateCharts"><span style="color:#dc2626">体脂率%</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;user-select:none">
+              <input type="checkbox" v-model="compShow.muscleMass" @change="updateCharts"><span style="color:#16a34a">肌肉量kg</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:13px;cursor:pointer;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;user-select:none">
+              <input type="checkbox" v-model="compShow.skeletalMuscleMass" @change="updateCharts"><span style="color:#7c3aed">骨骼肌量kg</span>
+            </label>
+          </div>
+          <canvas ref="compCanvas" width="600" height="280" style="width:100%;height:280px"></canvas>
+        </div>
         <canvas ref="circCanvas" width="600" height="280" style="width:100%;height:280px;margin-top:12px"></canvas>
       </div>
       <div v-else class="muted" style="margin-top:12px">需要至少2条记录才能绘制趋势图。</div>
@@ -83,6 +97,12 @@ const chartEnd = ref("2099-12-31")
 const weightCanvas = ref(null)
 const compCanvas = ref(null)
 const circCanvas = ref(null)
+
+const compShow = reactive({
+  bodyFatPercent: true,
+  muscleMass: true,
+  skeletalMuscleMass: true
+})
 
 const form = reactive({
   weight: 0, bodyFatPercent: 0, bodyFatMass: 0, muscleMass: 0, skeletalMuscleMass: 0,
@@ -200,7 +220,29 @@ function updateCharts() {
   if (rows.length < 2) return
   nextTick(() => {
     drawLineChart(weightCanvas.value, rows, ["weight"], ["体重 kg"], ["#2563eb"])
-    drawLineChart(compCanvas.value, rows, ["bodyFatPercent", "muscleMass", "skeletalMuscleMass"], ["体脂率%", "肌肉量kg", "骨骼肌量kg"], ["#dc2626", "#16a34a", "#7c3aed"])
+    // 根据勾选状态过滤身体成分图表的字段
+    const compFields = []
+    const compLabels = []
+    const compColors = []
+    if (compShow.bodyFatPercent) { compFields.push("bodyFatPercent"); compLabels.push("体脂率%"); compColors.push("#dc2626") }
+    if (compShow.muscleMass) { compFields.push("muscleMass"); compLabels.push("肌肉量kg"); compColors.push("#16a34a") }
+    if (compShow.skeletalMuscleMass) { compFields.push("skeletalMuscleMass"); compLabels.push("骨骼肌量kg"); compColors.push("#7c3aed") }
+    if (compFields.length > 0) {
+      drawLineChart(compCanvas.value, rows, compFields, compLabels, compColors)
+    } else {
+      // 清空画布
+      const ctx = compCanvas.value?.getContext("2d")
+      if (ctx && compCanvas.value) {
+        const w = compCanvas.value.width / (window.devicePixelRatio || 1)
+        const h = 280
+        ctx.fillStyle = "#fff"
+        ctx.fillRect(0, 0, w * (window.devicePixelRatio || 1), h * (window.devicePixelRatio || 1))
+        ctx.fillStyle = "#6b7280"
+        ctx.font = "14px -apple-system,sans-serif"
+        ctx.textAlign = "center"
+        ctx.fillText("请至少选择一项指标", w / 2, h / 2)
+      }
+    }
     drawLineChart(circCanvas.value, rows, ["chest", "waist", "hip"], ["胸围cm", "腰围cm", "臀围cm"], ["#2563eb", "#f97316", "#16a34a"])
   })
 }
